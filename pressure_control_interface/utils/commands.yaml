@@ -1,0 +1,236 @@
+settings:
+  version: "2.0"
+  delimeter: ';'
+  ending:    '\n'
+
+data:
+  delimeter: '\t'
+  ending:    '\n'
+  types:
+    0: 
+      label: "setpoint_pressure"
+      length: num_channels
+    1:
+      label: "measured_pressure"
+      length: num_channels
+    2:
+      label: "source_pressure"
+      length: 1
+
+commands:
+# Basic commands
+- cmd: 'on'
+  config_name: null
+  default_value: null
+  description: 'Turn on live data feedback'
+  num_args: 0
+
+- cmd: 'off'
+  config_name: null
+  default_value: null
+  description: 'Turn off live data feedback'
+  num_args: 0
+
+- cmd: 'load'
+  config_name: null
+  default_value: null
+  description: 'Load settings from onboard storage'
+  num_args: 0
+
+- cmd: 'save'
+  config_name: null
+  default_value: null
+  description: 'Save settings to onboard storage'
+  num_args: 0
+
+- cmd: 'mode'
+  config_name: "default_mode"
+  default_value: 'pressure_ramp'
+  description: 'Control mode'
+  enum: {valve: 0, pressure: 1, traj: 2, pressure_ramp: 3}
+  num_args: 1
+
+- cmd: 'time'
+  config_name: "data_loop_time"
+  default_value: 50
+  description: 'Duration between samples sent by live data feedback (in ms)'
+  num_args: 1
+
+- cmd: 'units'
+  config_name: "units"
+  default_value: ["psi","psi"]
+  description: 'pressure input and output units'
+  enum: {psi: 0, kpa: 1, bar: 2, atm: 3}
+  num_args: 2
+
+
+# Safety settings
+- cmd: 'maxp'
+  config_name: "max_pressure"
+  default_value: 50
+  description: 'Maximum pressure allowed (in pressure units)'
+  num_args:
+    min: 1
+    max: num_channels
+
+- cmd: 'minp'
+  config_name: "min_pressure"
+  default_value: -50
+  description: 'Minimum pressure allowed (in pressure units)'
+  num_args:
+    min: 1
+    max: num_channels
+
+- cmd: 'masterp'
+  config_name: "source_pressure"
+  default_value: [0,1]
+  description: 'Turn on/off the source pressure'
+  num_args:
+    min: 1
+    max: 2
+
+- cmd: 'mastermaxp'
+  config_name: "max_source_pressure"
+  default_value: [60,100]
+  description: 'Maximum source pressure (in pressure units) and minimum trigger time (in ms)'
+  num_args:
+    min: 1
+    max: 2
+
+
+# Control settings
+- cmd: 'chan'
+  config_name: "channel_states"
+  default_value: 1
+  description: 'Turn channels on or off'
+  num_args:
+    min: 1
+    max: num_channels
+
+- cmd: 'set'
+  config_name: "set"
+  default_value: [0, 0]
+  description: 'Set the ramp time and pressure setpoints (in pressure units)'
+  num_args:
+    min: 2
+    max: 'num_channels + 1'
+
+- cmd: 'valve'
+  config_name: null
+  default_value: 0
+  description: 'Set the valve states directly (-1.0 to 1.0)'
+  num_args:
+    min: 1
+    max: 'num_channels'
+
+
+# Controller settings
+- cmd: 'pid'
+  config_name: pid/values
+  default_value: 0
+  description: 'Set the pid values for a particular channel'
+  num_args: 4
+
+- cmd: 'window'
+  config_name: dead_window
+  default_value: 0
+  description: 'Set the dead window for channels (in pressure units)'
+  num_args:
+    min: 1
+    max: 'num_channels'
+
+- cmd: 'intstart'
+  config_name: integrator_start
+  default_value: 0.5
+  description: 'Start using the integrator when measured pressure is within this amount of the setpoint (in pressure units)'
+  num_args: 1
+
+
+# Trajectory setup
+- cmd: 'trajconfig'
+  config_name: null
+  default_value: 0
+  description: 'Configure a trajectory'
+  num_args: 4
+
+- cmd: 'trajwrap'
+  config_name: null
+  default_value: 0
+  description: 'Wrap trajectory'
+  num_args: 1
+
+- cmd: 'trajloop'
+  config_name: null
+  default_value: 1
+  description: 'Loop a trajectory some number of times'
+  num_args: 1
+
+- cmd: 'trajspeed'
+  config_name: null
+  default_value: 1.0
+  description: 'Speed multiplier'
+  num_args: 1
+
+- cmd: 'trajset'
+  config_name: null
+  default_value: null
+  description: 'Set one trajectory line'
+  num_args: 'num_channels + 2'
+
+- cmd: 'prefset'
+  config_name: null
+  default_value: null
+  description: 'Set one trajectory prefix line'
+  num_args: 'num_channels + 2'
+
+- cmd: 'suffset'
+  config_name: null
+  default_value: null
+  description: 'Set one trajectory suffix line'
+  num_args: 'num_channels + 2'
+
+
+# Trajectory running
+- cmd: 'trajstart'
+  config_name: null
+  default_value: null
+  description: 'Start the trajectory'
+  num_args: 0
+
+- cmd: 'trajstop'
+  config_name: null
+  default_value: null
+  description: 'Stop the trajectory'
+  num_args: 0
+
+- cmd: 'trajpause'
+  config_name: null
+  default_value: null
+  description: 'Pause the trajectory'
+  num_args: 0
+
+- cmd: 'trajresume'
+  config_name: null
+  default_value: null
+  description: 'Resume the trajectory'
+  num_args: 0
+
+
+# Others
+- cmd: 'defload'
+  config_name: null
+  default_value: null
+  description: 'Load default settings profile from onboard storage'
+  num_args: 0
+
+- cmd: 'defsave'
+  config_name: null
+  default_value: null
+  description: 'Overwrite default settings profile from onboard storage'
+  num_args: 0
+
+- cmd: 'lcdtime'
+  config_name: 'lcd_update_time'
+  default_value: 333
+  description: 'LCD update time (in ms)'
+  num_args: 0
