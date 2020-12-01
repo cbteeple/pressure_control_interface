@@ -1,0 +1,2 @@
+hardware: "single3.4"
+devnames: ["/dev/ttyUSB0"]

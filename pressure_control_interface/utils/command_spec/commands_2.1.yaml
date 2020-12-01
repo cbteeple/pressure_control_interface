@@ -1,21 +1,29 @@
 settings:
-  version: "2.0"
+  version: "2.1"
   delimeter: ';'
   ending:    '\n'
+
+echo:
+  prefix: '_'
+  cmd_delimeter: ': '
+  delimeter: '\t'
 
 data:
   delimeter: '\t'
   ending:    '\n'
   types:
     0: 
-      label: "setpoint_pressure"
+      label: "setpoints"
       length: num_channels
     1:
-      label: "measured_pressure"
+      label: "measured"
       length: num_channels
     2:
-      label: "source_pressure"
+      label: "input_pressure"
       length: 1
+    3:
+      label: "sensors"
+      length: null
 
 commands:
 # Basic commands

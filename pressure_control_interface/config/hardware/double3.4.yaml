@@ -1,0 +1,7 @@
+- baudrate: 115200 #2000000
+  num_channels: 8
+  cmd_spec: '2.0'
+  
+- baudrate: 115200 #2000000
+  num_channels: 8
+  cmd_spec: '2.0'
