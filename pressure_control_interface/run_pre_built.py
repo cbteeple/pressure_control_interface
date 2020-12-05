@@ -77,7 +77,7 @@ class PressureController:
         while os.path.exists("%s_%04d.txt" % (outFile,i) ):
             i += 1
 
-        self.out_file = open("%s_%04d.txt" % (outFile,i), "w+")
+        self.sh.save_init("%s_%04d.txt" % (outFile,i))
 
 
 
@@ -111,12 +111,8 @@ class PressureController:
         if line is not None:
             print(line)
             if self.save_data:
-                self.save_stuff(line)
-
-
-    def save_stuff(self, line):
-        self.out_file.write(line+'\n')
-    
+                self.sh.save_data_line(line)
+ 
 
 
 

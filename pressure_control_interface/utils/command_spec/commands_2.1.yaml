@@ -32,24 +32,28 @@ commands:
   default_value: null
   description: 'Turn on live data feedback'
   num_args: 0
+  split_how: null
 
 - cmd: 'off'
   config_name: null
   default_value: null
   description: 'Turn off live data feedback'
   num_args: 0
+  split_how: null
 
 - cmd: 'load'
   config_name: null
   default_value: null
   description: 'Load settings from onboard storage'
   num_args: 0
+  split_how: null
 
 - cmd: 'save'
   config_name: null
   default_value: null
   description: 'Save settings to onboard storage'
   num_args: 0
+  split_how: null
 
 - cmd: 'mode'
   config_name: "default_mode"
@@ -57,12 +61,21 @@ commands:
   description: 'Control mode'
   enum: {valve: 0, pressure: 1, traj: 2, pressure_ramp: 3}
   num_args: 1
+  split_how: null
+
+- cmd: 'echo'
+  config_name: "echo"
+  default_value: 0
+  description: 'Turn command echoing on/off'
+  num_args: 1
+  split_how: null
 
 - cmd: 'time'
   config_name: "data_loop_time"
   default_value: 50
   description: 'Duration between samples sent by live data feedback (in ms)'
   num_args: 1
+  split_how: null
 
 - cmd: 'units'
   config_name: "units"
@@ -70,6 +83,7 @@ commands:
   description: 'pressure input and output units'
   enum: {psi: 0, kpa: 1, bar: 2, atm: 3}
   num_args: 2
+  split_how: null
 
 
 # Safety settings
@@ -80,6 +94,9 @@ commands:
   num_args:
     min: 1
     max: num_channels
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
 
 - cmd: 'minp'
   config_name: "min_pressure"
@@ -88,6 +105,9 @@ commands:
   num_args:
     min: 1
     max: num_channels
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
 
 - cmd: 'masterp'
   config_name: "source_pressure"
@@ -96,6 +116,7 @@ commands:
   num_args:
     min: 1
     max: 2
+  split_how: null
 
 - cmd: 'mastermaxp'
   config_name: "max_source_pressure"
@@ -104,6 +125,7 @@ commands:
   num_args:
     min: 1
     max: 2
+  split_how: null
 
 
 # Control settings
@@ -114,6 +136,9 @@ commands:
   num_args:
     min: 1
     max: num_channels
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
 
 - cmd: 'set'
   config_name: "set"
@@ -122,6 +147,9 @@ commands:
   num_args:
     min: 2
     max: 'num_channels + 1'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel+1'
 
 - cmd: 'valve'
   config_name: null
@@ -130,6 +158,9 @@ commands:
   num_args:
     min: 1
     max: 'num_channels'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
 
 
 # Controller settings
@@ -138,6 +169,9 @@ commands:
   default_value: 0
   description: 'Set the pid values for a particular channel'
   num_args: 4
+  split_how:
+    single_arg: 'idx0'
+    multi_arg:  'idx0'
 
 - cmd: 'window'
   config_name: dead_window
@@ -146,12 +180,16 @@ commands:
   num_args:
     min: 1
     max: 'num_channels'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
 
 - cmd: 'intstart'
   config_name: integrator_start
   default_value: 0.5
   description: 'Start using the integrator when measured pressure is within this amount of the setpoint (in pressure units)'
   num_args: 1
+  split_how: null
 
 
 # Trajectory setup
@@ -160,42 +198,55 @@ commands:
   default_value: 0
   description: 'Configure a trajectory'
   num_args: 4
+  split_how: null
 
 - cmd: 'trajwrap'
   config_name: null
   default_value: 0
   description: 'Wrap trajectory'
   num_args: 1
+  split_how: null
 
 - cmd: 'trajloop'
   config_name: null
   default_value: 1
   description: 'Loop a trajectory some number of times'
   num_args: 1
+  split_how: null
 
 - cmd: 'trajspeed'
   config_name: null
   default_value: 1.0
   description: 'Speed multiplier'
   num_args: 1
+  split_how: null
 
 - cmd: 'trajset'
   config_name: null
   default_value: null
   description: 'Set one trajectory line'
   num_args: 'num_channels + 2'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel+2'
 
 - cmd: 'prefset'
   config_name: null
   default_value: null
   description: 'Set one trajectory prefix line'
   num_args: 'num_channels + 2'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel+2'
 
 - cmd: 'suffset'
   config_name: null
   default_value: null
   description: 'Set one trajectory suffix line'
   num_args: 'num_channels + 2'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel+2'
 
 
 # Trajectory running
@@ -204,24 +255,28 @@ commands:
   default_value: null
   description: 'Start the trajectory'
   num_args: 0
+  split_how: null
 
 - cmd: 'trajstop'
   config_name: null
   default_value: null
   description: 'Stop the trajectory'
   num_args: 0
+  split_how: null
 
 - cmd: 'trajpause'
   config_name: null
   default_value: null
   description: 'Pause the trajectory'
   num_args: 0
+  split_how: null
 
 - cmd: 'trajresume'
   config_name: null
   default_value: null
   description: 'Resume the trajectory'
   num_args: 0
+  split_how: null
 
 
 # Others
@@ -230,15 +285,18 @@ commands:
   default_value: null
   description: 'Load default settings profile from onboard storage'
   num_args: 0
+  split_how: null
 
 - cmd: 'defsave'
   config_name: null
   default_value: null
   description: 'Overwrite default settings profile from onboard storage'
   num_args: 0
+  split_how: null
 
 - cmd: 'lcdtime'
   config_name: 'lcd_update_time'
   default_value: 333
   description: 'LCD update time (in ms)'
   num_args: 0
+  split_how: null

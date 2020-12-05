@@ -1,2 +1,2 @@
-hardware: "single3.4"
-devnames: ["/dev/ttyUSB0"]
+hardware: "double3.4"
+devnames: ["/dev/ttyACM0", "/dev/ttyACM1"]

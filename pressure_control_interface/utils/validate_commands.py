@@ -7,9 +7,9 @@ import yaml
 
 
 class CommandValidator:
-    def __init__(self, cmd_spec_version):
+    def __init__(self, cmd_spec_version, num_channels):
 
-        
+        self.num_channels = num_channels
 
         this_file = os.path.dirname(os.path.abspath(__file__))
         command_spec_file = os.path.join(this_file,'command_spec', 'commands_'+cmd_spec_version+'.yaml')
@@ -28,6 +28,8 @@ class CommandValidator:
         cmd_list = []
         for cmd in self.cmd_spec['commands']:
             cmd_list.append(cmd['cmd'])
+
+            cmd['num_args'] = self.get_num_args(cmd)
             
         self.cmd_list = cmd_list
         self.cmd_echo     = self.cmd_spec['echo']
@@ -36,10 +38,47 @@ class CommandValidator:
         self.cmd_data_types = self.cmd_spec['data']['types'].keys()
 
 
+    def get_spec(self, cmd):
+        cmd = cmd.lower()
+        if not cmd in self.cmd_list:
+            return None
+
+        cmd_idx = self.cmd_list.index(cmd)
+
+        curr_cmd_spec = self.cmd_spec['commands'][cmd_idx]
+
+        return curr_cmd_spec
+
+
+    def get_num_args(self, spec):
+        num_channels=self.num_channels
+        num_args=[0]*2
+
+        if spec is None:
+            return None
+        
+        else:
+            num_args_spec = spec['num_args']
+
+            if isinstance(num_args_spec, dict):
+                num_args[0] = num_args_spec['min']
+                num_args[1] = num_args_spec['max']
+            else:
+                num_args[0] = num_args_spec
+                num_args[1] = num_args_spec
+            
+            for idx,arg in enumerate(num_args):
+                if isinstance(arg, str):
+                    if 'num_channels' in arg:
+                        num_args[idx] = eval(arg)
+        
+        return num_args
+
+
 
     def process_line(self, line_in):
         if not line_in:
-            return False
+            return None
 
         try:
             if line_in.startswith(self.cmd_echo['prefix']):
@@ -96,5 +135,5 @@ class CommandValidator:
                         self.data_in.input_pressure  = [float(i) for i in line_split[2:]]
 
 
-        except rospy.ROSException:
-            return
+        except:
+            pass
