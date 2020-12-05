@@ -2,6 +2,7 @@
 
 import os
 import yaml
+import copy
 
 
 
@@ -22,6 +23,7 @@ class CommandValidator:
         self.generate_command_list()
         self.data_in = None
         self.save_file = None
+        self.first_time = None
 
 
     def generate_command_list(self):
@@ -77,7 +79,10 @@ class CommandValidator:
 
 
     def process_line(self, line_in):
-        if not line_in:
+
+        output = None
+
+        if line_in == None:
             return None
 
         try:
@@ -109,19 +114,22 @@ class CommandValidator:
                 if data_type == 0: # Handle incomming setpoint data
                     # Here marks a new data point. Send the previous one.
                     if self.data_in is not None:
-                        return self.data_in, 'data'
+                        if self.first_time is None:
+                            self.first_time = copy.deepcopy(self.data_in['time'])
+
+                        self.data_in['time'] = self.data_in['time']-self.first_time
+                        output = (self.data_in, 'data')
 
                     # Now begin the next one
                     self.data_in = dict();
-                    self.data_in.time = int(line_split[0])
-                    self.data_in.setpoints = [float(i) for i in line_split[2:]]
-
+                    self.data_in['time'] = int(line_split[0])
+                    self.data_in['setpoints'] = [float(i) for i in line_split[2:]]
                 elif data_type == 1: # Handle incomming measured data
                     if self.data_in is None:
-                        return
+                        return None
 
-                    if self.data_in.time == int(line_split[0]):
-                        self.data_in.measured  = [float(i) for i in line_split[2:]]
+                    if self.data_in['time'] == int(line_split[0]):
+                        self.data_in['measured']  = [float(i) for i in line_split[2:]]
 
                     else:
                         if self.DEBUG:
@@ -129,10 +137,12 @@ class CommandValidator:
 
                 elif data_type == 2: # Handle incomming master pressure data
                     if self.data_in is None:
-                        return
+                        return None
 
-                    if self.data_in.time == int(line_split[0]):
-                        self.data_in.input_pressure  = [float(i) for i in line_split[2:]]
+                    if self.data_in['time'] == int(line_split[0]):
+                        self.data_in['input_pressure']  = [float(i) for i in line_split[2:]]
+            
+            return output
 
 
         except:

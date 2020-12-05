@@ -1,16 +1,16 @@
 settings:
   version: "2.1"
-  delimeter: ';'
-  ending:    '\n'
+  delimeter: ";"
+  ending:    "\n"
 
 echo:
   prefix: '_'
   cmd_delimeter: ': '
-  delimeter: '\t'
+  delimeter: "\t"
 
 data:
-  delimeter: '\t'
-  ending:    '\n'
+  delimeter: "\t"
+  ending:    "\n"
   types:
     0: 
       label: "setpoints"

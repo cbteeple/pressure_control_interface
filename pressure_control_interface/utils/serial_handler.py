@@ -76,7 +76,7 @@ class SerialHandler:
 
 
     # Send commands out
-    def send_command(self, command, values=None, format="%0.5f"):
+    def send_command(self, command, values=None, format="%0.3f"):
         cmd = self.split_command(command, values, format)
         print(cmd, len(cmd))
 
@@ -85,7 +85,7 @@ class SerialHandler:
                 ser.write(cmd_curr.encode())
 
 
-    def split_command(self, command, values, format="%0.5f"):
+    def split_command(self, command, values, format="%0.3f"):
         commands_out = []
         num_chans = []
         for settings in self.serial_settings:
@@ -164,7 +164,7 @@ class SerialHandler:
 
 
 
-    def build_cmd_string(self, command, values, format="%0.5f"):
+    def build_cmd_string(self, command, values, format="%0.3f"):
         txt = command
         if values is not None:
             #print("%s \t %s"%(command, values))
@@ -214,6 +214,9 @@ class SerialHandler:
                 
                 else:
                     new_out.append(line[0])
+
+            if new_out == [None]*len(self.s):
+                return None
             
             return new_out 
 
@@ -321,11 +324,12 @@ class DataSaver:
 
     def save_data_line(self,data_line):
         try:
+            if data_line is None:
+                return
+
             data=[]
             for idx,key in enumerate(self.data_labels):
-                if data_line is None:
-                    return
-
+    
                 expected_len = self.data_lens[idx]
                 dat = data_line.get(key,None)
                 if isinstance(dat, list):

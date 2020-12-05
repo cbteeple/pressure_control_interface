@@ -74,7 +74,7 @@ class PressureController:
             os.makedirs(dirname)
 
         i = 0
-        while os.path.exists("%s_%04d.txt" % (outFile,i) ):
+        while os.path.exists("%s_%04d_00.txt" % (outFile,i) ):
             i += 1
 
         self.sh.save_init("%s_%04d.txt" % (outFile,i))
