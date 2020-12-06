@@ -155,8 +155,7 @@ class SerialHandler:
 
             elif switch_idx is not None:
                 if values[switch_idx] < max_chan and values[switch_idx] >= min_chan:
-                    if idx > 0:
-                        values[switch_idx] = float(values[switch_idx]) - float(num_chans[idx-1])
+                    values[switch_idx] = float(values[switch_idx]) - min_chan
                     commands_out.append(self.build_cmd_string(command, values, format=format))
                 else:
                     commands_out.append(None)
