@@ -43,7 +43,7 @@ class SerialHandler:
     def read_serial_settings(self, file=None):
         file_path = os.path.dirname(os.path.realpath(__file__))
         if file is None:
-            file=os.path.join(file_path,"..","config","comms","hardware_config.yaml")
+            file=os.path.join(file_path,"..","config","comms","comms_config.yaml")
         with open(file) as f:
             # use safe_load instead of load
             hardware_settings = yaml.safe_load(f)
