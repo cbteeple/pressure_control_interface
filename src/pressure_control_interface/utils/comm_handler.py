@@ -8,10 +8,113 @@ import csv
 import re
 
 
-import validate_commands
+from validate_commands import CommandValidator
 
 
-class SerialHandler:
+def build_cmd_string(command, values=None, format="%0.3f"):
+    txt = command
+    if values is not None:
+        #print("%s \t %s"%(command, values))
+        if isinstance(values, list) or isinstance(values, tuple):
+            if values:
+                for val in values:
+                    txt+= ";"+format%(val)
+        else:
+            txt+=";"+format%(values)
+    cmd = txt+'\n'
+    return cmd
+
+
+class CommandHandler:
+    def __init__(self, comm_list):
+        self.comm_list = comm_list
+
+        self.validators = []
+        for settings in self.comm_list:
+            self.num_chans.append(settings['num_channels'])
+            self.cmd_specs.append(settings['cmd_spec'])
+
+            self.validators.append(CommandValidator(settings["cmd_spec"], settings["num_channels"]))
+
+
+    def split_command(self, command, values, format="%0.3f"):
+        commands_out = []
+
+        for idx in enumerate(self.comm_list):
+            spec = self.validators[idx].get_spec(command)
+
+            split_how = spec['split_how']
+
+            split_idx = None
+            switch_idx = None
+
+            # If we are not splitting the command, send the same thing to each controller
+            if split_how == None:
+                commands_out.append({'command':command, 'values':values})
+
+            # If we are splitting the command, determine how
+            else:
+                if isinstance(values,list):
+                    if spec['num_args'][0] == len(values):
+                        split_how_single = split_how.get('single_arg',None)
+
+                        if split_how_single is None:
+                            commands_out.append({'command':command, 'values':values})
+                        elif 'channel' in split_how_single:
+                            channel = 0
+                            split_idx = eval(split_how_single)
+                        
+                        elif 'idx' in split_how_single:
+                            channel = 0
+                            switch_idx = int(re.match('.*?([0-9]+)$', split_how_single).group(1))
+                        else:
+                            commands_out.append(None)
+
+                    
+                    else:
+                        split_how_multi = split_how.get('multi_arg',None)
+
+                        if split_how_multi is None:
+                            commands_out.append({'command':command, 'values':values})
+                        elif 'channel' in split_how_multi:
+                            channel = 0
+                            split_idx = eval(split_how_multi)
+                        
+                        elif 'idx' in split_how_multi:
+                            channel = 0
+                            switch_idx = int(re.match('.*?([0-9]+)$', split_how_single).group(1))
+                        else:
+                            commands_out.append(None)
+                else:
+                    commands_out.append({'command':command, 'values':values})
+
+            max_chan = sum(self.num_chans[0:idx+1])
+            min_chan = sum(self.num_chans[0:idx])
+
+            if split_idx is not None:
+                curr_vals = values[0:split_idx]
+
+                if len(values) >=max_chan+split_idx:
+                    curr_vals.extend(values[min_chan+split_idx:max_chan+split_idx])
+                
+                else:
+                    curr_vals.extend(values[min_chan+split_idx:])
+
+                commands_out.append({'command':command, 'values':curr_vals})
+
+            elif switch_idx is not None:
+                if values[switch_idx] < max_chan and values[switch_idx] >= min_chan:
+                    values[switch_idx] = float(values[switch_idx]) - min_chan
+                    commands_out.append({'command':command, 'values':values})
+                else:
+                    commands_out.append(None)
+
+        return commands_out
+
+
+
+
+class CommHandler:
     def __init__(self):
         self.serial_settings = None
         self.s = None
@@ -28,12 +131,14 @@ class SerialHandler:
                 self.s.append(serial.Serial(settings["devname"], settings["baudrate"]))
         else:
             self.s = None
-            raise ValueError("SerialHandler expects either a devname and baudrate, or and existing serial object")
+            raise ValueError("CommHandler expects either a devname and baudrate, or and existing serial object")
 
+
+        self.command_handler=CommandHandler(self.serial_settings)
         self.validator = []
         self.loggers   = []
-        for settings in self.serial_settings:
-            validator_curr = validate_commands.CommandValidator(settings["cmd_spec"], settings["num_channels"])
+        for idx, settings in enumerate(self.serial_settings):
+            validator_curr = self.command_handler.validators[idx]
             self.validator.append(validator_curr)
             self.loggers.append(DataSaver(settings,validator_curr))
                 
@@ -77,107 +182,24 @@ class SerialHandler:
 
     # Send commands out
     def send_command(self, command, values=None, format="%0.3f"):
-        cmd = self.split_command(command, values, format)
+        cmd_obj = self.command_handler.split_command(command, values)
+
+        cmd = []
+        for cmd_curr in cmd_obj:
+            if cmd_curr is None:
+                cmd.append(None)
+            else:
+                cmd.append(build_cmd_string(cmd_curr['command'], cmd_curr['values'], format) )
+            
+
+
         print(cmd, len(cmd))
 
         for ser, cmd_curr in zip(self.s,cmd):
             if cmd_curr is not None:
                 ser.write(cmd_curr.encode())
 
-
-    def split_command(self, command, values, format="%0.3f"):
-        commands_out = []
-        num_chans = []
-        for settings in self.serial_settings:
-            num_chans.append(settings['num_channels'])
-
-        for idx,ser in enumerate(self.s):
-            spec = self.validator[idx].get_spec(command)
-
-            split_how = spec['split_how']
-
-            split_idx = None
-            switch_idx = None
-
-            # If we are not splitting the command, send the same thing to each controller
-            if split_how == None:
-                commands_out.append(self.build_cmd_string(command, values, format=format))
-
-            # If we are splitting the command, determine how
-            else:
-                if isinstance(values,list):
-                    if spec['num_args'][0] == len(values):
-                        split_how_single = split_how.get('single_arg',None)
-
-                        if split_how_single is None:
-                            commands_out.append(self.build_cmd_string(command, values, format=format))
-                        elif 'channel' in split_how_single:
-                            channel = 0
-                            split_idx = eval(split_how_single)
                         
-                        elif 'idx' in split_how_single:
-                            channel = 0
-                            switch_idx = int(re.match('.*?([0-9]+)$', split_how_single).group(1))
-                        else:
-                            commands_out.append(None)
-
-                    
-                    else:
-                        split_how_multi = split_how.get('multi_arg',None)
-
-                        if split_how_multi is None:
-                            commands_out.append(self.build_cmd_string(command, values, format=format))
-                        elif 'channel' in split_how_multi:
-                            channel = 0
-                            split_idx = eval(split_how_multi)
-                        
-                        elif 'idx' in split_how_multi:
-                            channel = 0
-                            switch_idx = int(re.match('.*?([0-9]+)$', split_how_single).group(1))
-                        else:
-                            commands_out.append(None)
-                else:
-                    commands_out.append(self.build_cmd_string(command, values, format=format))
-
-            max_chan = sum(num_chans[0:idx+1])
-            min_chan = sum(num_chans[0:idx])
-
-            if split_idx is not None:
-                curr_vals = values[0:split_idx]
-
-                if len(values) >=max_chan+split_idx:
-                    curr_vals.extend(values[min_chan+split_idx:max_chan+split_idx])
-                
-                else:
-                    curr_vals.extend(values[min_chan+split_idx:])
-
-                commands_out.append(self.build_cmd_string(command, curr_vals, format=format))
-
-            elif switch_idx is not None:
-                if values[switch_idx] < max_chan and values[switch_idx] >= min_chan:
-                    values[switch_idx] = float(values[switch_idx]) - min_chan
-                    commands_out.append(self.build_cmd_string(command, values, format=format))
-                else:
-                    commands_out.append(None)
-
-        return commands_out
-                        
-
-
-
-    def build_cmd_string(self, command, values, format="%0.3f"):
-        txt = command
-        if values is not None:
-            #print("%s \t %s"%(command, values))
-            if isinstance(values, list):
-                if values:
-                    for val in values:
-                        txt+= ";"+format%(val)
-            else:
-                txt+=";"+format%(values)
-        cmd = txt+'\n'
-        return cmd
-
 
     # Send a raw string out
     def send_string(self, string, eol='\n'):

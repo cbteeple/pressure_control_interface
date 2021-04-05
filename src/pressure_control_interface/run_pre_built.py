@@ -9,7 +9,7 @@ import yaml
 from pynput.keyboard import Key, Listener
 
 sys.path.insert(1, 'utils')
-from serial_handler import SerialHandler
+from comm_handler import CommHandler
 from get_files import get_save_path
 
 data_back=True
@@ -28,7 +28,7 @@ class PressureController:
     def __init__(self, devname=None,baudrate=None,serial_hand=None,cycles=1,speed_factor=1.0):
         
         # Initialize the serial handler
-        self.sh = SerialHandler()
+        self.sh = CommHandler()
         if serial_hand is not None:
             self.sh = serial_hand
         elif devname is None and baudrate is None:

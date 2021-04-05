@@ -7,7 +7,7 @@ import os
 import yaml
 
 sys.path.insert(1, 'utils')
-from serial_handler import SerialHandler
+from comm_handler import CommHandler
 from get_files import get_save_path
 
 # Get the desired save path from save_paths.yaml
@@ -22,7 +22,7 @@ board_teensy= True
 
 class TrajSend:
     def __init__(self, devname=None,baudrate=None):
-        self.sh = SerialHandler()
+        self.sh = CommHandler()
 
         if devname is None or baudrate is None:
             self.sh.read_serial_settings()
