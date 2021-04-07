@@ -30,6 +30,8 @@ class CommandHandler:
         self.comm_list = comm_list
 
         self.validators = []
+        self.num_chans = []
+        self.cmd_specs = []
         for settings in self.comm_list:
             self.num_chans.append(settings['num_channels'])
             self.cmd_specs.append(settings['cmd_spec'])
@@ -40,7 +42,7 @@ class CommandHandler:
     def split_command(self, command, values, format="%0.3f"):
         commands_out = []
 
-        for idx in enumerate(self.comm_list):
+        for idx,_ in enumerate(self.comm_list):
             spec = self.validators[idx].get_spec(command)
 
             split_how = spec['split_how']

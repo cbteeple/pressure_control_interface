@@ -85,6 +85,13 @@ commands:
   num_args: 2
   split_how: null
 
+- cmd: 'currtime'
+  config_name: "curr_time"
+  default_value: 0
+  description: 'Set the current display time on the controller (in ms)'
+  num_args: 1
+  split_how: null
+
 
 # Safety settings
 - cmd: 'maxp'

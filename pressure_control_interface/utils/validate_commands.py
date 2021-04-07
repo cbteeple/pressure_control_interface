@@ -114,10 +114,10 @@ class CommandValidator:
                 if data_type == 0: # Handle incomming setpoint data
                     # Here marks a new data point. Send the previous one.
                     if self.data_in is not None:
-                        if self.first_time is None:
-                            self.first_time = copy.deepcopy(self.data_in['time'])
+                        #if self.first_time is None:
+                        #    self.first_time = copy.deepcopy(self.data_in['time'])
 
-                        self.data_in['time'] = self.data_in['time']-self.first_time
+                        #self.data_in['time'] = self.data_in['time'] -self.first_time
                         output = (self.data_in, 'data')
 
                     # Now begin the next one

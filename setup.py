@@ -8,8 +8,8 @@ from catkin_pkg.python_setup import generate_distutils_setup
 
 
 setup_args = generate_distutils_setup(
-    packages=['pressure_controller_interface'],
-	package_dir={'': 'src'}
+    packages=['pressure_control_interface'],
+	package_dir={'': ''}
 )
 
 setup(**setup_args)
