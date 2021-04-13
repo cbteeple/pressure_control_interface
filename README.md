@@ -1,4 +1,4 @@
-# Ctrl-P 2.0: Python Control Interface
+# Ctrl-P 2.1: Python Control Interface
 The top-level control interface for controlling a Ctrl-P pressure control system.
 
 ## Dependencies

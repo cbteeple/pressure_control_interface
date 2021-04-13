@@ -198,6 +198,15 @@ commands:
   num_args: 1
   split_how: null
 
+- cmd: 'voffset'
+  config_name: valve_offsets
+  default_value: 0
+  description: 'Set the PWM offset values for valves one particular channel'
+  num_args: 3
+  split_how:
+    single_arg: 'idx0'
+    multi_arg:  'idx0'
+
 
 # Trajectory setup
 - cmd: 'trajconfig'
