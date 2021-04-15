@@ -56,7 +56,8 @@ class CommandHandler:
 
             # If we are splitting the command, determine how
             else:
-                if isinstance(values,list):
+                if isinstance(values,list) or isinstance(values,tuple):
+                    values = list(values)
                     if spec['num_args'][0] == len(values):
                         split_how_single = split_how.get('single_arg',None)
 
