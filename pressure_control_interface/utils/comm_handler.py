@@ -58,9 +58,8 @@ class CommandHandler:
             else:
                 if isinstance(values,list) or isinstance(values,tuple):
                     values = list(values)
+                    split_how_single = split_how.get('single_arg',None)
                     if spec['num_args'][0] == len(values):
-                        split_how_single = split_how.get('single_arg',None)
-
                         if split_how_single is None:
                             commands_out.append({'command':command, 'values':values})
                         elif 'channel' in split_how_single:
