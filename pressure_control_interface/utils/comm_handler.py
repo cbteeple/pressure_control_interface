@@ -45,7 +45,10 @@ class CommandHandler:
         for idx,_ in enumerate(self.comm_list):
             spec = self.validators[idx].get_spec(command)
 
-            split_how = spec['split_how']
+            if spec is None:
+                split_how = None
+            else:
+                split_how = spec.get('split_how',None)
 
             split_idx = None
             switch_idx = None
@@ -58,6 +61,11 @@ class CommandHandler:
             else:
                 if isinstance(values,list) or isinstance(values,tuple):
                     values = list(values)
+                    
+                    if len(values) ==0:
+                        commands_out.append({'command':command, 'values':values})
+                        continue
+
                     split_how_single = split_how.get('single_arg',None)
                     if spec['num_args'][0] == len(values):
                         if split_how_single is None:
