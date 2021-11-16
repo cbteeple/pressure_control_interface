@@ -1,2 +1,2 @@
-hardware: "double3.4"
-devnames: ["/dev/ttyACM0", "/dev/ttyACM1"]
+hardware: "single3.4_9chan"
+devnames: ["COM5"]

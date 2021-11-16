@@ -21,14 +21,17 @@ board_teensy= True
 
 
 class TrajSend:
-    def __init__(self, devname=None,baudrate=None):
-        self.sh = CommHandler()
+    def __init__(self, devname=None,baudrate=None, sh=None):
+        if sh is None:
+            self.sh = CommHandler()
 
-        if devname is None or baudrate is None:
-            self.sh.read_serial_settings()
-            self.sh.initialize()
+            if devname is None or baudrate is None:
+                self.sh.read_serial_settings()
+                self.sh.initialize()
+            else:
+                self.sh.initialize(devname,baudrate)
         else:
-            self.sh.initialize(devname,baudrate)
+            self.sh=sh
 
         self.traj_folder  = traj_folder
         self.send_wait = 0.05;
@@ -48,7 +51,7 @@ class TrajSend:
     def get_traj(self,filename):
         self.filename = filename
         # Read in the setpoint file
-        inFile=os.path.join(traj_folder,filename+".traj")
+        inFile=os.path.join(traj_folder,filename)
         with open(inFile,'r') as f:
             # use safe_load instead of load
             trajIn = yaml.safe_load(f)
@@ -147,7 +150,7 @@ if __name__ == '__main__':
 
             # Create a pressure controller object
             pres=TrajSend()
-            pres.get_traj(sys.argv[1])
+            pres.get_traj(sys.argv[1]+".traj")
 
 
 

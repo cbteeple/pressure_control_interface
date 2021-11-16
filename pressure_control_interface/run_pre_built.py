@@ -67,6 +67,7 @@ class PressureController:
 
 
     def create_out_file(self,filename):
+        filename = filename.replace('.traj',"")
         outFile=os.path.join(data_base,filename)
 
         dirname = os.path.dirname(outFile)
