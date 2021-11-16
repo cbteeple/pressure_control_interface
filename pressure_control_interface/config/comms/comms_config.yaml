@@ -1,2 +1,2 @@
-hardware: "single3.4_9chan"
-devnames: ["COM5"]
+hardware: "single3.4"
+devnames: ["dev/ttyACM0"]
