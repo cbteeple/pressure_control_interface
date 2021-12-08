@@ -6,7 +6,7 @@ All dependencies are managed in the reqirements file.
 `pip install -r requirements.txt`
 
 ## Usage
-[Instructions in the documentation](https://ctrl-p.cbteeple.com/top-level)
+[Instructions in the documentation](https://ctrl-p.cbteeple.com/latest/top-level)
 
 ## About Ctrl-P
 The Ctrl-P project is a full-stack pneumatic control system featuring smooth control of pressure at a high bandwidth.
