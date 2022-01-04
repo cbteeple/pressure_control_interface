@@ -9,8 +9,8 @@ import yaml
 from pynput.keyboard import Key, Listener
 
 sys.path.insert(1, 'utils')
-from comm_handler import CommHandler
-from get_files import get_save_path
+from ctrlp import CommHandler
+from ctrlp.get_files import get_save_path
 
 data_back=True
 save_data = True

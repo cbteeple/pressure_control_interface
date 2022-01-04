@@ -4,8 +4,7 @@ import sorotraj
 import os
 import sys
 
-sys.path.insert(1, 'utils')
-from get_files import get_save_path
+from ctrlp.get_files import get_save_path
 
 # Get the desired save path from save_paths.yaml
 setup_location = get_save_path(which='traj_setup')

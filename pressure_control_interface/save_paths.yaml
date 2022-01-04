@@ -2,7 +2,7 @@ preferred: "data" #"F:/pressure_data"
 default:   "data"
 temp:      "C:/Users/clt596/Documents/Microrobotics Lab/Soft Grasping Platform/palms/Testing/pressure_data"
 
-config: config
+config: "config"
 
 traj_setup: "traj_setup"
 traj_built: "traj_built"

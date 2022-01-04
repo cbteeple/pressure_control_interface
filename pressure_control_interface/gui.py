@@ -12,10 +12,9 @@ import serial
 import seaborn as sns
 import threading
 
-sys.path.insert(1, 'utils')
-from comm_handler import CommHandler
-from config_handler import ConfigHandler
-from get_files import get_save_path, load_yaml, save_yaml
+from ctrlp import CommHandler
+from ctrlp import ConfigHandler
+from ctrlp.get_files import get_save_path, load_yaml, save_yaml
 
 
 def _from_rgb(rgb):
@@ -165,7 +164,7 @@ class PressureControlGui:
     def __init__(self):
         self.config = None
         self.pressures = None
-        self.ctrlp = None
+        self.comm_handler = None
         self.read_thread = None
         self.send_thread = None
         # Get the desired save path from save_paths.yaml
@@ -180,23 +179,23 @@ class PressureControlGui:
 
 
     def connect_to_controller(self, hw_profile=None, devices=None):
-        if self.ctrlp is not None:
+        if self.comm_handler is not None:
             self.run_read_thread = False
-            self.ctrlp.shutdown()
-            del self.ctrlp
+            self.comm_handler.shutdown()
+            del self.comm_handler
 
-        self.ctrlp = CommHandler()
+        self.comm_handler = CommHandler()
         if hw_profile is None or devices is None:
-            self.ctrlp.read_serial_settings()
+            self.comm_handler.read_serial_settings()
         else:
-            self.ctrlp.set_serial_settings(hw_profile=hw_profile,devices=devices)
-        self.ctrlp.initialize()
-        self.config_handler = ConfigHandler(self.ctrlp.command_handler)
+            self.comm_handler.set_serial_settings(hw_profile=hw_profile,devices=devices)
+        self.comm_handler.initialize()
+        self.config_handler = ConfigHandler(self.comm_handler.command_handler)
         self.load_config_file()
         self.channel_types=[]
-        for i in range(len(self.ctrlp.serial_settings)):
-            num_channels = self.ctrlp.serial_settings[i]['num_channels']
-            self.channel_types.extend([self.ctrlp.serial_settings[i]['type']]*num_channels)
+        for i in range(len(self.comm_handler.serial_settings)):
+            num_channels = self.comm_handler.serial_settings[i]['num_channels']
+            self.channel_types.extend([self.comm_handler.serial_settings[i]['type']]*num_channels)
         time.sleep(2.0)
         
         self.run_read_thread = True
@@ -205,11 +204,11 @@ class PressureControlGui:
 
         self.init_control_editor()
 
-        #self.ctrlp.send_command("echo",1)
-        #self.ctrlp.send_command("speed",200)
-        #self.ctrlp.send_command("cont",1)
-        #self.ctrlp.send_command("echo",0)
-        #self.ctrlp.send_command("off",None)
+        #self.comm_handler.send_command("echo",1)
+        #self.comm_handler.send_command("speed",200)
+        #self.comm_handler.send_command("cont",1)
+        #self.comm_handler.send_command("echo",0)
+        #self.comm_handler.send_command("off",None)
 
 
     def start_pressure_thread(self):
@@ -263,11 +262,11 @@ class PressureControlGui:
         commands = self.config_handler.get_commands()
         for command in commands:
             print(command) 
-            if self.ctrlp:
-                self.ctrlp.send_command(command['cmd'],command['args'])
+            if self.comm_handler:
+                self.comm_handler.send_command(command['cmd'],command['args'])
                 time.sleep(0.1)
 
-        self.ctrlp.send_command('save',None) 
+        self.comm_handler.send_command('save',None) 
         self.status_bar.config(text ='Sent config!')
 
 
@@ -385,8 +384,8 @@ class PressureControlGui:
                 else:
                     val_to_send.append(0)
 
-            if self.ctrlp:
-                self.ctrlp.send_command("speed",val_to_send)
+            if self.comm_handler:
+                self.comm_handler.send_command("speed",val_to_send)
 
             #if self.livesend.get():
             #    self.set_pressure()
@@ -402,8 +401,8 @@ class PressureControlGui:
         press = copy.deepcopy(self.curr_pressures)
         press.insert(0, self.transition_speed.get())
 
-        if self.ctrlp:
-            self.ctrlp.send_command("set",press)
+        if self.comm_handler:
+            self.comm_handler.send_command("set",press)
         
         #print(press)
 
@@ -417,15 +416,15 @@ class PressureControlGui:
 
     def set_data_stream(self):
         if self.live_data.get():
-            self.ctrlp.send_command("on",None)
+            self.comm_handler.send_command("on",None)
         else:
-            self.ctrlp.send_command("off",None)
+            self.comm_handler.send_command("off",None)
 
 
     def read_data(self):
         try:
             while self.run_read_thread:
-                line=self.ctrlp.read_all()
+                line=self.comm_handler.read_all()
                 if line:
                     print(line)
         except serial.serialutil.SerialException:

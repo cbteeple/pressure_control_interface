@@ -6,9 +6,8 @@ import sys
 import os
 import yaml
 
-sys.path.insert(1, 'utils')
-from comm_handler import CommHandler
-from get_files import get_save_path
+from ctrlp import CommHandler
+from ctrlp.get_files import get_save_path
 
 # Get the desired save path from save_paths.yaml
 config_folder = get_save_path(which='config')
