@@ -23,5 +23,7 @@ PID:
 max_pressure: 25
 min_pressure: -10
 
+transitions: 0.60 #[sec]
+
 #For debugging purposes
 echo: False

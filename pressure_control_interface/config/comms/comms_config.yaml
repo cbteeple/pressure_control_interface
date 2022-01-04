@@ -1,2 +1,2 @@
-hardware: "dynamixel"
-devnames: ["COM7"]
+hardware: "single3.4"
+devnames: ["COM4"]

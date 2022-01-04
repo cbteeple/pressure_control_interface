@@ -6,122 +6,77 @@ import sys
 import os
 import yaml
 
-from ctrlp import CommHandler
-from ctrlp.get_files import get_save_path
-
-# Get the desired save path from save_paths.yaml
-config_folder = get_save_path(which='config')
-
+from ctrlp import CommHandler, ConfigHandler
+from ctrlp.get_files import get_save_path, load_yaml
 
 class ConfigSender:
     def __init__(self, devname=None,baudrate=None):
-        self.sh = CommHandler()
+        self.comm_handler = CommHandler()        
 
         if devname is None or baudrate is None:
-            self.sh.read_serial_settings()
-            self.sh.initialize()
+            self.comm_handler.read_serial_settings()
+            self.comm_handler.initialize()
         else:
-            self.sh.initialize(devname,baudrate)
+            self.comm_handler.initialize(devname,baudrate)
 
-        self.config_folder  = config_folder
+        self.config_handler = ConfigHandler(self.comm_handler.command_handler)
 
-        time.sleep(2)
-        self.sh.send_command("off")
-        time.sleep(0.1)
-        self.sh.send_command("chan",1)
-        time.sleep(0.1)
-        self.sh.send_command("mode",0)
-        time.sleep(0.1)
-        self.sh.send_command("valve",-1)
-        time.sleep(0.1)
-        self.sh.send_command("valve",-0.001)
-        time.sleep(0.1)
-
-        self.sh.read_all(display=True)
-            
+        self.config_folder  = get_save_path(which='config')
+        self.config=None
 
     # Read the cofniguration from a file
-    def read_config(self, filename):
-        inFile=os.path.join(self.config_folder,"control",filename+".yaml")
+    def load_config(self, filename):
+        in_file=os.path.join(self.config_folder,"control",filename+".yaml")
+        print(in_file)
 
-        if os.path.isfile(inFile):
-            with open(inFile) as f:
-                # use safe_load instead of load
-                self.config = yaml.safe_load(f)
-                f.close()
-        else:
-            self.config=None
-            print("The config file does not exist")
-            self.shutdown()
+        config = self._load_config(in_file)
+
+        if config:
+            self.config = self.config_handler.parse_config(config)
+
+
+    def set_config(self, config):
+        if config:
+            self.config = self.config_handler.parse_config(config)
+
             
+    def _load_config(self, filename):
+        try:
+            config = load_yaml(filename)
+            if isinstance(config, dict):
+                if config.get('channels'):
+                    basename = os.path.basename(filename)
+                    print('New config "%s" loaded'%(basename))
+                    return config
+                else:
+                    print('Incorrect config format')
+                    return False
+            else:
+                print('Incorrect config format')
+                return False
+            
+        except:
+            print('New config was not loaded')
+            return False
 
-    # Send several configuration settings from a config file
-    def set_config(self, filename):
-        self.read_config(filename)
 
+    def send_config(self, echo=False):
         if self.config:
-            self.sh.send_command("echo",bool(self.config.get("echo")))
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
+            commands = self.config_handler.get_commands()
+            if echo:
+                self.comm_handler.send_command("echo",True)
+            for command in commands:
+                print(command) 
+                if self.comm_handler:
+                    self.comm_handler.send_command(command['cmd'],command['args'])
+                    time.sleep(0.1)
+                    self.comm_handler.read_all(display=True)
 
-            self.num_channels = self.config.get("channels").get("num_channels")
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-            
-            self.sh.send_command("chan",self.config.get("channels").get("states"))
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-            
-
-            self.sh.send_command("maxp", self.config.get("max_pressure") )
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-
-            self.sh.send_command("minp", self.config.get("min_pressure") )
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-            
-            self.handle_pid()
-            
-            self.sh.send_command("time",int(self.config.get("data_loop_time")))
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-
-            self.sh.send_command("valve",0)
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-            
-            self.sh.send_command("mode",3)
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-            
-            self.sh.send_command("save",[])
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-
-
-    # handle complicated pid settings
-    def handle_pid(self):
-        pid = self.config.get("PID")
-
-        all_equal = pid.get("all_equal")
-        if all_equal:
-            values = []
-            for idx in range(self.num_channels):
-                values.append(pid.get("values"))
-        else:
-            values = pid.get("values")
-            
-        # Send out the settings for all channels
-        for idx in range(self.num_channels):
-            self.sh.send_command("pid",[idx]+values[idx])
-            time.sleep(0.1)
-            self.sh.read_all(display=True)
-
+            self.comm_handler.send_command('save',None) 
 
     # Shut down the config object
     def shutdown(self):
-        self.sh.shutdown()
+        self.comm_handler.shutdown()
         
     
 
@@ -132,10 +87,11 @@ if __name__ == '__main__':
     pres=ConfigSender()
     if len(sys.argv)==2:
         # Upload the configuration and save it
-        pres.set_config(sys.argv[1])
+        pres.load_config(sys.argv[1])
     elif len(sys.argv)==1:        
         # Upload the configuration and save it
-        pres.set_config('default')            
+        pres.load_config('default')   
     else:
         print("Please include a config file as the input")
+    pres.send_config() 
     pres.shutdown()
