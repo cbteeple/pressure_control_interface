@@ -35,6 +35,10 @@ class ConfigSender:
             self.config = self.config_handler.parse_config(config)
 
 
+    def get_config(self):
+        return self.config
+        
+
     def set_config(self, config):
         if config:
             self.config = self.config_handler.parse_config(config)
