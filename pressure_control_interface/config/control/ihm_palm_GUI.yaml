@@ -10,7 +10,7 @@ channels:
 data_loop_time: 20 #[ms]
 
 
-#Set the PID Values.
+# Set the PID Values.
 #   If "all_equal" is True, then only the values in "values" are used
 #   If "all-equal" is False, then settings for all channels must be specified as a list of lists
 PID:
@@ -23,8 +23,12 @@ PID:
 max_pressure: [40,40,40,40, 40,40,40,40, 5]
 min_pressure: -14.7
 
-#For debugging purposes
+# Transition time
+transitions: 0.5 #[sec]
+
+# For debugging purposes
 echo: False
 
 gui:
   groups: [[0,1], [2,3]]
+

@@ -8,3 +8,4 @@ sorotraj>=0.11
 pyserial
 tk
 ttkthemes
+ctrlp

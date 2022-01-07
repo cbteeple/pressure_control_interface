@@ -209,6 +209,7 @@ class PressureControlGui:
         #self.comm_handler.send_command("cont",1)
         #self.comm_handler.send_command("echo",0)
         #self.comm_handler.send_command("off",None)
+        return True
 
 
     def start_pressure_thread(self):
@@ -300,7 +301,7 @@ class PressureControlGui:
             basename = os.path.basename(filepath)
             self.curr_config_file['basename'] = basename
             self.curr_config_file['dirname'] = os.path.dirname(filepath)
-            self.init_control_sender()
+            ##self.init_control_sender()
             #self.init_pressure_editor()
             self.txt_edit.delete("1.0", tk.END)
             with open(filepath, "r") as input_file:
@@ -309,10 +310,13 @@ class PressureControlGui:
             self.root.title(f"Pressure Control Interface | Config Editor - {basename}")
 
             self.init_pressure_editor()
+            self.config_btns['save']['state']='normal'
+            self.config_btns['saveas']['state']='normal'
+            self.config_btns['send']['state']='normal'
 
-            self.open_sliders_btn.configure(state="normal")
+            #self.open_sliders_btn.configure(state="normal")
         else:
-            self.open_sliders_btn.configure(state="disabled")
+            #self.open_sliders_btn.configure(state="disabled")
             self.del_control_sender()
 
 
@@ -440,10 +444,11 @@ class PressureControlGui:
 
 
     def get_serial_setup(self):
-        self.connect_btn['state']='disabled'
+        
+        self.config_btns['connect']['state']='disabled'
         self.w=CommConfig(self.root, hw_path=self.hw_path, hw_options=self.hw_options)
         self.root.wait_window(self.w.top)
-        self.connect_btn['state']='normal'
+        self.config_btns['connect']['state']='normal'
 
         if (self.w.hw_profile is None) or (self.w.comports is None):
             self.status_bar.config(text ='No Devices Connected')
@@ -454,29 +459,48 @@ class PressureControlGui:
         
         self.connect_to_controller(hw_profile=self.w.hw_profile, devices=self.w.comports,)
         self.status_bar.config(text ='Controller Connected!')
+        self.config_btns['connect']['state']='disabled'
 
 
     def init_gui(self):
         # Make a new window
         self.root = ThemedTk(theme="breeze")#tk.Tk()
         self.root.title("Pressure Control Interface")
-        self.root.rowconfigure(0, minsize=200, weight=1)
-        self.root.columnconfigure(1, minsize=200, weight=1)
 
-        # Build the text pane, but button pane, and the slider pane
-        self.txt_edit = tk.Text(self.root)
-        self.txt_edit.grid(row=0, column=1, sticky="nsew")
-        #self.txt_edit.bind('<KeyRelease>', self.update_config())
-        
-        self.fr_sidebar = tk.Frame(self.root, bd=2,)
-        self.status_bar = tk.Label(self.fr_sidebar, text="Hello!",
+        # Add the statusbar
+        self.status_bar = tk.Label(self.root, text="Hello! Connect to a controller to get started.",
             foreground=self.color_scheme['secondary_normal'],
             width=10,
             height=3,
             font=('Arial',12))
+        self.status_bar.pack(expand=1, fill="both", padx=5, pady=5)
+        
+        # Make tabs
+        self.tabControl = ttk.Notebook(self.root)
+        self.config_tab = ttk.Frame(self.tabControl)
+        self.pedit_tab  = ttk.Frame(self.tabControl)
+        self.traj_tab   = ttk.Frame(self.tabControl)
 
+        self.tabControl.add(self.config_tab, text='Configuration')
+        self.tabControl.add(self.pedit_tab, text='Pressure Control', state="disabled")
+        self.tabControl.add(self.traj_tab, text='Trajectory Control', state="disabled")
+        self.tabControl.pack(expand=1, fill="both")
+
+
+        self.config_btns={}
+        self.pedit_btns={}
+        self.traj_btns={}
+
+        self.config_tab.rowconfigure(0, minsize=200, weight=1)
+        self.config_tab.columnconfigure(1, minsize=200, weight=1)
+
+        # Build the text pane, but button pane, and the slider pane
+        self.txt_edit = tk.Text(self.config_tab)
+        self.txt_edit.grid(row=0, column=1, sticky="nsew")
+        #self.txt_edit.bind('<KeyRelease>', self.update_config())
+        
+        self.fr_sidebar = tk.Frame(self.config_tab, bd=2,)
         self.fr_sidebar.grid(row=0, column=0, sticky="ns")
-        self.status_bar.grid(row=0, column=0, columnspan=3, sticky="ew", padx=5, pady=5)
 
         #self.init_control_editor()
         self.init_control_sender()
@@ -495,22 +519,30 @@ class PressureControlGui:
         button2 = ttk.Button(fr_buttons,
             text="Save Config",
             command=self.save_config_file,
+            state='disabled',
         )
         button3 = ttk.Button(fr_buttons,
             text="Save Config As",
             command=self.save_config_file_as,
+            state='disabled',
         )
         button4 = ttk.Button(fr_buttons,
             text="Send Config",
             command=self.send_config,
+            state='disabled',
         )
-        button.grid(row=1, column=0, sticky="ew", padx=5)
-        button2.grid(row=1, column=1, sticky="ew", padx=5)
-        button3.grid(row=1, column=2, sticky="ew", padx=5)
-        button4.grid(row=1, column=3, sticky="ew", padx=5)
+        button.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        button2.grid(row=2, column=0, sticky="ew", padx=5, pady=5)
+        button3.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
+        button4.grid(row=4, column=0, sticky="ew", padx=5, pady=5)
         #btn.grid(row=1, column=2, sticky="ew", padx=5)
 
         fr_buttons.grid(row=2, column=0, sticky="ns")
+
+        self.config_btns['open']=button
+        self.config_btns['save']=button2
+        self.config_btns['saveas']=button3
+        self.config_btns['send']=button4
 
 
     def init_control_sender(self):
@@ -518,12 +550,12 @@ class PressureControlGui:
         self.fr_send_btns.grid(row=1, column=0, sticky="ns", pady=20)
 
 
-        self.open_sliders_btn = ttk.Button(self.fr_send_btns,
-            text="Open Sliders",
-            command=self.init_pressure_editor,
-        )
-        self.open_sliders_btn.grid(row=0, column=2, sticky="ew", padx=5)
-        self.open_sliders_btn.configure(state="disabled")
+        #self.open_sliders_btn = ttk.Button(self.fr_send_btns,
+        #    text="Open Sliders",
+        #    command=self.init_pressure_editor,
+        #)
+        #self.open_sliders_btn.grid(row=0, column=2, sticky="ew", padx=5)
+        #self.open_sliders_btn.configure(state="disabled")
 
         self.connect_btn = ttk.Button(self.fr_send_btns,
             text="Connect Controller",
@@ -532,6 +564,8 @@ class PressureControlGui:
         )
 
         self.connect_btn.grid(row=0, column=0, sticky="ew", padx=5)
+
+        self.config_btns['connect']=self.connect_btn
 
 
     def del_control_sender(self):
@@ -599,7 +633,7 @@ class PressureControlGui:
         self.transition_speed = tk.DoubleVar()
         self.transition_speed.set(self.config.get('transitions', 0.0))
         
-        self.fr_slider_btns = tk.Frame(self.fr_sidebar, bd=2, )
+        self.fr_slider_btns = tk.Frame(self.pedit_tab, bd=2, )
         self.fr_slider_btns.grid(row=99, column=0, sticky="ns", pady=5)
 
         button = ttk.Button(self.fr_slider_btns,
@@ -637,11 +671,14 @@ class PressureControlGui:
 
         button3.grid(row=0, column=3, sticky="ew", padx=5)
 
-        self.fr_sliders = tk.Frame(self.fr_sidebar, bd=2)
+        self.fr_sliders = tk.Frame(self.pedit_tab, bd=2)
         self.fr_sliders.grid(row=98, column=0, sticky="ns", pady=20)
         self.init_sliders(self.fr_sliders)
 
         self.start_pressure_thread()
+
+        # Enable the pressure control tab
+        self.tabControl.tab(self.pedit_tab, state="normal")
 
 
     def init_sliders(self, fr_sliders):
