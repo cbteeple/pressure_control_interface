@@ -410,6 +410,15 @@ class PressureControlGui:
         
         #print(press)
 
+    def send_command_string(self):
+        cmdstring = self.cmd_btns['cmd'].get()
+        self.comm_handler.send_string(cmdstring)
+
+    
+    def send_command(self, cmd, args):
+        self.comm_handler.send_command(cmd, args)
+
+
     def set_pressure(self):
         if self.livesend.get():
             return
@@ -461,6 +470,8 @@ class PressureControlGui:
         self.status_bar.config(text ='Controller Connected!')
         self.config_btns['connect']['state']='disabled'
 
+        self.init_manual_editor()
+
 
     def init_gui(self):
         # Make a new window
@@ -480,16 +491,19 @@ class PressureControlGui:
         self.config_tab = ttk.Frame(self.tabControl)
         self.pedit_tab  = ttk.Frame(self.tabControl)
         self.traj_tab   = ttk.Frame(self.tabControl)
+        self.cmd_tab   = ttk.Frame(self.tabControl)
 
         self.tabControl.add(self.config_tab, text='Configuration')
         self.tabControl.add(self.pedit_tab, text='Pressure Control', state="disabled")
         self.tabControl.add(self.traj_tab, text='Trajectory Control', state="disabled")
+        self.tabControl.add(self.cmd_tab, text='Manual Override', state="disabled")
         self.tabControl.pack(expand=1, fill="both")
 
 
         self.config_btns={}
         self.pedit_btns={}
         self.traj_btns={}
+        self.cmd_btns={}
 
         self.config_tab.rowconfigure(0, minsize=200, weight=1)
         self.config_tab.columnconfigure(1, minsize=200, weight=1)
@@ -508,11 +522,63 @@ class PressureControlGui:
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
         self.root.mainloop()
 
+        
+
+
+    def init_manual_editor(self):
+        fr_sidebar = tk.LabelFrame(self.cmd_tab, bd=2,text="Quick Commands")
+        fr_sidebar.pack(expand=False, fill="x", side="top", pady=10)
+
+        fr_txt = tk.LabelFrame(self.cmd_tab, bd=2, text="Send Commands")
+        fr_txt.pack(expand=False, fill="x", side="top", pady=10)
+
+        fr_txt.grid_rowconfigure(0, weight=1)
+        fr_txt.grid_columnconfigure(0, weight=1)
+
+        button1 = ttk.Button(fr_sidebar,
+            text="Reset",
+            command=lambda : self.send_command("reset",None) ,
+        )
+        button2 = ttk.Button(fr_sidebar,
+            text="Load Onboard",
+            command=lambda : self.send_command("load",None),
+            state='normal',
+        )
+        button3 = ttk.Button(fr_sidebar,
+            text="Save Onboard",
+            command=lambda : self.send_command("save",None),
+            state='normal',
+        )
+
+        button1.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        button2.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        button3.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
+
+        # Make the text entry for sending commands
+        button4 = ttk.Button(fr_txt,
+            text="Send",
+            command=self.send_command_string,
+            state='normal',
+        )       
+
+        text_box = ttk.Entry(fr_txt,font=('Courier', 14))
+        text_box.grid(row=0, column=0, sticky="ew")
+
+        button4.grid(row=0, column=1, sticky="e", padx=5, pady=5)
+
+
+        self.cmd_btns['open']    = button1
+        self.cmd_btns['save']    = button2
+        self.cmd_btns['saveas']  = button3
+        self.cmd_btns['cmdsend'] = button4
+        self.cmd_btns['cmd']     = text_box
+
+        self.tabControl.tab(self.cmd_tab, state="normal")
 
     def init_control_editor(self):
         fr_buttons = tk.Frame(self.fr_sidebar,  bd=2, )
 
-        button = ttk.Button(fr_buttons,
+        button1 = ttk.Button(fr_buttons,
             text="Open Config",
             command=self.open_config_file,
         )
@@ -531,7 +597,7 @@ class PressureControlGui:
             command=self.send_config,
             state='disabled',
         )
-        button.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        button1.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
         button2.grid(row=2, column=0, sticky="ew", padx=5, pady=5)
         button3.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
         button4.grid(row=4, column=0, sticky="ew", padx=5, pady=5)
@@ -539,10 +605,10 @@ class PressureControlGui:
 
         fr_buttons.grid(row=2, column=0, sticky="ns")
 
-        self.config_btns['open']=button
-        self.config_btns['save']=button2
+        self.config_btns['open']  =button1
+        self.config_btns['save']  =button2
         self.config_btns['saveas']=button3
-        self.config_btns['send']=button4
+        self.config_btns['send']  =button4
 
 
     def init_control_sender(self):
