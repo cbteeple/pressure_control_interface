@@ -39,6 +39,6 @@ traj = sorotraj.TrajBuilder(graph=False)
 for file in files_to_use:
     traj.load_traj_def(os.path.join(setup_location,file))
     traj.save_traj(os.path.join(os.path.abspath(build_location),file+'_orig'))
-    traj.convert(conversion_fun)
+    traj.convert_traj(conversion_fun)
     traj.save_traj(os.path.join(os.path.abspath(build_location),file))
     traj.plot_traj()
