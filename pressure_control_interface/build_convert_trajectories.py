@@ -3,8 +3,8 @@ import os
 
 from ctrlp.get_files import get_save_path
 
-folder = 'palm'
-files_to_use = ['rot_gait','translate']
+folder = 'example'
+files_to_use = ['setpoint_traj_demo','simple_setpoint']
 
 
 # Get the desired save path from save_paths.yaml
@@ -35,7 +35,7 @@ weights = [0.9, 1.0]
 conversion_fun = lambda line: linear_conversion(line, weights)
 
 # Build the trajectories, convert them , and save them
-traj = sorotraj.TrajBuilder(graph=False)
+traj = sorotraj.TrajBuilder()
 for file in files_to_use:
     traj.load_traj_def(os.path.join(setup_location,file))
     traj.save_traj(os.path.join(os.path.abspath(build_location),file+'_orig'))
