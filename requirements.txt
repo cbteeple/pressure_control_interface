@@ -4,7 +4,7 @@ matplotlib>=3.0.3
 seaborn>=0.10.0
 pynput>=1.6.8
 PyYAML>=5.3.1
-sorotraj>=0.11
+sorotraj>=1.2.6
 pyserial
 tk
 ttkthemes

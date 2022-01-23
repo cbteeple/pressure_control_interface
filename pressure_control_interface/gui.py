@@ -1,3 +1,5 @@
+from collections import deque
+from re import L
 import tkinter as tk
 import tkinter.ttk as ttk
 from ttkthemes import ThemedTk
@@ -167,6 +169,9 @@ class PressureControlGui:
         self.comm_handler = None
         self.read_thread = None
         self.send_thread = None
+        self.command_history = deque([])
+        self.command_history_idx = 0
+        self.scroll_command_history = False
         # Get the desired save path from save_paths.yaml
         self.traj_folder = get_save_path(which='traj_built')
         self.config_folder = get_save_path(which='config')
@@ -191,7 +196,7 @@ class PressureControlGui:
             self.comm_handler.set_serial_settings(hw_profile=hw_profile,devices=devices)
         self.comm_handler.initialize()
         self.config_handler = ConfigHandler(self.comm_handler.command_handler)
-        self.load_config_file()
+        #self.load_config_file()
         self.channel_types=[]
         for i in range(len(self.comm_handler.serial_settings)):
             num_channels = self.comm_handler.serial_settings[i]['num_channels']
@@ -410,9 +415,53 @@ class PressureControlGui:
         
         #print(press)
 
-    def send_command_string(self):
-        cmdstring = self.cmd_btns['cmd'].get()
+    def send_command_string(self, event=None):
+        cmdstring = self.cmd_btns['cmd_var'].get()
+        self.cmd_btns['cmd_var'].set("")
         self.comm_handler.send_string(cmdstring)
+        self.command_history.appendleft(cmdstring)
+
+        if len(self.command_history)>100:
+            self.command_history.pop()
+        
+        self.command_history_idx=0
+        self.scroll_command_history=False
+
+    def reset_command_history(self, event=None):
+        self.command_history_idx=0
+        self.scroll_command_history=False
+
+    def scroll_command_history_up(self, event=None):
+        if not self.scroll_command_history:
+            self.scroll_command_history=True
+        else:
+            self.command_history_idx+=1
+
+            if self.command_history_idx <0:
+                self.command_history_idx=0
+            elif self.command_history_idx >=len(self.command_history):
+                self.command_history_idx=len(self.command_history)-1
+
+
+        new_cmd = self.command_history[self.command_history_idx]
+        self.cmd_btns['cmd_var'].set(new_cmd)
+
+        
+
+    def scroll_command_history_down(self, event=None):
+        if not self.scroll_command_history:
+            return 
+
+        self.command_history_idx-=1
+
+        if self.command_history_idx <0:
+            self.command_history_idx=0
+        elif self.command_history_idx >=len(self.command_history):
+            self.command_history_idx=len(self.command_history)-1
+
+        new_cmd = self.command_history[self.command_history_idx]
+        self.cmd_btns['cmd_var'].set(new_cmd)
+
 
     
     def send_command(self, cmd, args):
@@ -440,9 +489,26 @@ class PressureControlGui:
                 line=self.comm_handler.read_all()
                 if line:
                     print(line)
+                    if line[0][0] is not None:
+                        if line[0][0].get('_command', None) is not None:
+                            self.updated_echos(line[0][0])
         except serial.serialutil.SerialException:
             pass
 
+
+    def updated_echos(self, echo):
+        txt=self.cmd_btns.get('txt_return',None)
+        if txt is not None:
+            txt.configure(state='normal')
+            #txt.delete(1.0,tk.END)
+            txt.insert(tk.END, ('%s\t%s\n')%(echo['_command'], echo['_args']))
+            txt.see("end")
+
+            num_lines = int(txt.index('end').split('.')[0]) - 2
+
+            if num_lines>self.cmd_btns['num_manual_lines']:
+                txt.delete(1.0,2.0)
+            txt.configure(state='disabled')
     
     def set_pressure_threaded(self):
         while self.run_read_thread:
@@ -469,8 +535,33 @@ class PressureControlGui:
         self.connect_to_controller(hw_profile=self.w.hw_profile, devices=self.w.comports,)
         self.status_bar.config(text ='Controller Connected!')
         self.config_btns['connect']['state']='disabled'
+        self.config_btns['disconnect']['state']='enabled'
 
         self.init_manual_editor()
+
+    def reset_serial_setup(self):
+
+        if self.comm_handler is not None:
+            self.run_read_thread = False
+            self.comm_handler.shutdown()
+            self.comm_handler = None
+        
+        # Clear the text editor
+        self.txt_edit.delete("1.0", tk.END)
+        self.config=None
+        self.config_btns['config_frame'].destroy()
+
+        self.del_sliders()
+        # Disable the pressure control tab
+        self.tabControl.tab(self.pedit_tab, state="disabled")
+        self.tabControl.tab(self.cmd_tab, state="disabled")
+        self.tabControl.tab(self.traj_tab, state="disabled")
+        
+
+
+        self.status_bar.config(text ='Controller Disconnected!')
+        self.config_btns['connect']['state']='enabled'
+        self.config_btns['disconnect']['state']='disabled'
 
 
     def init_gui(self):
@@ -484,7 +575,7 @@ class PressureControlGui:
             width=10,
             height=3,
             font=('Arial',12))
-        self.status_bar.pack(expand=1, fill="both", padx=5, pady=5)
+        self.status_bar.pack(expand=False, fill="x", padx=5, pady=5)
         
         # Make tabs
         self.tabControl = ttk.Notebook(self.root)
@@ -497,7 +588,7 @@ class PressureControlGui:
         self.tabControl.add(self.pedit_tab, text='Pressure Control', state="disabled")
         self.tabControl.add(self.traj_tab, text='Trajectory Control', state="disabled")
         self.tabControl.add(self.cmd_tab, text='Manual Override', state="disabled")
-        self.tabControl.pack(expand=1, fill="both")
+        self.tabControl.pack(expand=True, fill="both")
 
 
         self.config_btns={}
@@ -523,28 +614,46 @@ class PressureControlGui:
         self.root.mainloop()
 
         
+    def del_manual_editor(self):
+        try:
+            self.cmd_btns['cmd_frame'].destroy()
+            self.cmd_btns['txt_frame'].destroy()
+        except:
+            pass
+
 
 
     def init_manual_editor(self):
-        fr_sidebar = tk.LabelFrame(self.cmd_tab, bd=2,text="Quick Commands")
-        fr_sidebar.pack(expand=False, fill="x", side="top", pady=10)
+        self.del_manual_editor()
+        fr_commands = tk.LabelFrame(self.cmd_tab, bd=2,text="Quick Commands")
+        fr_commands.pack(expand=False, fill="x", side="top", pady=10, padx=10)
 
-        fr_txt = tk.LabelFrame(self.cmd_tab, bd=2, text="Send Commands")
-        fr_txt.pack(expand=False, fill="x", side="top", pady=10)
+        fr_sender = tk.LabelFrame(self.cmd_tab,  bd=2, text="Send Commands")
+        fr_sender.pack(expand=True, fill="both", side="top", pady=10, padx=10)
+
+        text_box_return = tk.Text(fr_sender, state='disabled', height=1, bg='#ffffff',
+                        font=('Arial', 11))
+        text_box_return.pack(expand=True, fill="both", side="top", pady=5, padx=5)
+
+        fr_txt = tk.Frame(fr_sender, height=2)
+        
+        fr_txt.pack(expand=False, fill="x", side="top", pady=5, padx=5)
 
         fr_txt.grid_rowconfigure(0, weight=1)
         fr_txt.grid_columnconfigure(0, weight=1)
 
-        button1 = ttk.Button(fr_sidebar,
+        
+
+        button1 = ttk.Button(fr_commands,
             text="Reset",
             command=lambda : self.send_command("reset",None) ,
         )
-        button2 = ttk.Button(fr_sidebar,
+        button2 = ttk.Button(fr_commands,
             text="Load Onboard",
             command=lambda : self.send_command("load",None),
             state='normal',
         )
-        button3 = ttk.Button(fr_sidebar,
+        button3 = ttk.Button(fr_commands,
             text="Save Onboard",
             command=lambda : self.send_command("save",None),
             state='normal',
@@ -561,17 +670,27 @@ class PressureControlGui:
             state='normal',
         )       
 
-        text_box = ttk.Entry(fr_txt,font=('Courier', 14))
+        command_var = tk.StringVar()
+        text_box = ttk.Entry(fr_txt,font=('Courier', 14), textvariable=command_var)
+        text_box.bind('<Return>', self.send_command_string)
+        text_box.bind('<Up>', self.scroll_command_history_up)
+        text_box.bind('<Down>', self.scroll_command_history_down)
+        text_box.bind('<Key>',self.reset_command_history)
         text_box.grid(row=0, column=0, sticky="ew")
 
         button4.grid(row=0, column=1, sticky="e", padx=5, pady=5)
 
 
+        self.cmd_btns['num_manual_lines'] = 200
         self.cmd_btns['open']    = button1
         self.cmd_btns['save']    = button2
         self.cmd_btns['saveas']  = button3
         self.cmd_btns['cmdsend'] = button4
         self.cmd_btns['cmd']     = text_box
+        self.cmd_btns['cmd_var']     = command_var
+        self.cmd_btns['cmd_frame']     = fr_commands
+        self.cmd_btns['txt_frame']     = fr_sender
+        self.cmd_btns['txt_return']    = text_box_return
 
         self.tabControl.tab(self.cmd_tab, state="normal")
 
@@ -609,6 +728,7 @@ class PressureControlGui:
         self.config_btns['save']  =button2
         self.config_btns['saveas']=button3
         self.config_btns['send']  =button4
+        self.config_btns['config_frame'] = fr_buttons
 
 
     def init_control_sender(self):
@@ -623,15 +743,23 @@ class PressureControlGui:
         #self.open_sliders_btn.grid(row=0, column=2, sticky="ew", padx=5)
         #self.open_sliders_btn.configure(state="disabled")
 
-        self.connect_btn = ttk.Button(self.fr_send_btns,
+        connect_btn = ttk.Button(self.fr_send_btns,
             text="Connect Controller",
             command=self.get_serial_setup,
             state='active',
         )
 
-        self.connect_btn.grid(row=0, column=0, sticky="ew", padx=5)
+        disconnect_btn = ttk.Button(self.fr_send_btns,
+            text="Disconnect Controller",
+            command=self.reset_serial_setup,
+            state='disabled',
+        )
 
-        self.config_btns['connect']=self.connect_btn
+        connect_btn.grid(row=0, column=0, sticky="ew", padx=5)
+        disconnect_btn.grid(row=1, column=0, sticky="ew", padx=5)
+
+        self.config_btns['connect']=connect_btn
+        self.config_btns['disconnect']=disconnect_btn
 
 
     def del_control_sender(self):
@@ -831,6 +959,11 @@ class PressureControlGui:
         
         self.channels
 
+
+    def on_gui_reset(self):
+        self.shutdown()
+        self.root.destroy()
+        self.init_gui()
 
     def on_window_close(self):
         if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
