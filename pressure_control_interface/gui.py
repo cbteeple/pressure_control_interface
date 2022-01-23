@@ -172,6 +172,7 @@ class PressureControlGui:
         self.command_history = deque([])
         self.command_history_idx = 0
         self.scroll_command_history = False
+        self.feedback_idx=0
         # Get the desired save path from save_paths.yaml
         self.traj_folder = get_save_path(which='traj_built')
         self.config_folder = get_save_path(which='config')
@@ -419,10 +420,17 @@ class PressureControlGui:
         cmdstring = self.cmd_btns['cmd_var'].get()
         self.cmd_btns['cmd_var'].set("")
         self.comm_handler.send_string(cmdstring)
-        self.command_history.appendleft(cmdstring)
+
+        if len(self.command_history)>0:
+            if cmdstring !=self.command_history[0]:
+                self.command_history.appendleft(cmdstring)
+        else:
+            self.command_history.appendleft(cmdstring)
 
         if len(self.command_history)>100:
             self.command_history.pop()
+
+        print(self.command_history)
         
         self.command_history_idx=0
         self.scroll_command_history=False
@@ -501,14 +509,21 @@ class PressureControlGui:
         if txt is not None:
             txt.configure(state='normal')
             #txt.delete(1.0,tk.END)
-            txt.insert(tk.END, ('%s\t%s\n')%(echo['_command'], echo['_args']))
-            txt.see("end")
+            txt.insert(tk.END, ('%d\t%s\t%s\n')%(self.feedback_idx,echo['_command'], echo['_args']))
 
-            num_lines = int(txt.index('end').split('.')[0]) - 2
+            if self.cmd_btns.get('txt_autoscroll',True).get():
+                txt.see("end")
 
-            if num_lines>self.cmd_btns['num_manual_lines']:
-                txt.delete(1.0,2.0)
+            try:
+                num_lines = int(txt.index('end').split('.')[0]) - 2
+                num_lines_allowed=self.cmd_btns['num_manual_lines'].get()
+
+                if num_lines>num_lines_allowed:
+                    txt.delete(1.0, float(num_lines-num_lines_allowed+1))
+            except:
+                pass
             txt.configure(state='disabled')
+            self.feedback_idx+=1
     
     def set_pressure_threaded(self):
         while self.run_read_thread:
@@ -631,9 +646,19 @@ class PressureControlGui:
         fr_sender = tk.LabelFrame(self.cmd_tab,  bd=2, text="Send Commands")
         fr_sender.pack(expand=True, fill="both", side="top", pady=10, padx=10)
 
-        text_box_return = tk.Text(fr_sender, state='disabled', height=1, bg='#ffffff',
-                        font=('Arial', 11))
-        text_box_return.pack(expand=True, fill="both", side="top", pady=5, padx=5)
+        fr_text_return = tk.Frame(fr_sender)
+        fr_text_return.pack(expand=True, fill="both", side="top", pady=5, padx=5)
+
+        scrollbar = tk.Scrollbar(fr_text_return)
+
+        text_box_return = tk.Text(fr_text_return, state='disabled', height=1, bg='#ffffff',
+                        font=('Arial', 11),
+                        yscrollcommand = scrollbar.set)
+
+        scrollbar.config( command = text_box_return.yview )
+
+        scrollbar.pack( side = 'right', fill = 'y')
+        text_box_return.pack( side = 'left', fill = 'both' )
 
         fr_txt = tk.Frame(fr_sender, height=2)
         
@@ -670,6 +695,24 @@ class PressureControlGui:
             state='normal',
         )       
 
+        autoscroll_var = tk.BooleanVar()
+        autoscroll_var.set(self.settings.get('manual_command_sender',{}).get('autoscroll', True))
+
+        autoscroll_btn = ttk.Checkbutton(fr_txt,
+            text="Auto-scroll",
+            variable=autoscroll_var,
+        )
+
+
+        num_lines = tk.IntVar()
+        num_lines.set(self.settings.get('manual_command_sender',{}).get('feedback_window_length', 200))
+        spin = Spinbox(fr_txt,
+                width=6,
+                from_=0, to=10000, increment=1,
+                textvariable=num_lines,
+                font=('Arial', 12),
+                )
+        
         command_var = tk.StringVar()
         text_box = ttk.Entry(fr_txt,font=('Courier', 14), textvariable=command_var)
         text_box.bind('<Return>', self.send_command_string)
@@ -679,9 +722,11 @@ class PressureControlGui:
         text_box.grid(row=0, column=0, sticky="ew")
 
         button4.grid(row=0, column=1, sticky="e", padx=5, pady=5)
+        autoscroll_btn.grid(row=0, column=2, sticky="e", padx=5, pady=5)
+        spin.grid(row=0, column=3, sticky="ew", padx=5)
 
 
-        self.cmd_btns['num_manual_lines'] = 200
+        self.cmd_btns['num_manual_lines'] = num_lines
         self.cmd_btns['open']    = button1
         self.cmd_btns['save']    = button2
         self.cmd_btns['saveas']  = button3
@@ -690,9 +735,12 @@ class PressureControlGui:
         self.cmd_btns['cmd_var']     = command_var
         self.cmd_btns['cmd_frame']     = fr_commands
         self.cmd_btns['txt_frame']     = fr_sender
+        self.cmd_btns['return_frame']     = fr_text_return
         self.cmd_btns['txt_return']    = text_box_return
+        self.cmd_btns['txt_autoscroll'] = autoscroll_var
 
         self.tabControl.tab(self.cmd_tab, state="normal")
+
 
     def init_control_editor(self):
         fr_buttons = tk.Frame(self.fr_sidebar,  bd=2, )

@@ -19,3 +19,8 @@ file_types:
     - ["Trajectory Setup Files", "*.yaml"]
     - ["Trajectory Build Files", "*.traj"]
     - ["All Files", "*.*"]
+
+manual_command_sender:
+    autoscroll: True
+    feedback_window_length: 200
+    command_history_length: 100
