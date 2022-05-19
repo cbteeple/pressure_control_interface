@@ -868,6 +868,8 @@ class PressureControlGui:
     def init_pressure_editor(self):
         self.del_sliders()
 
+        self.send_command('mode',[3])
+
         self.set_graph_colors()
 
         self.livesend = tk.IntVar()
